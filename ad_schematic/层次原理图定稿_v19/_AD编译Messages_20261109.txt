@@ -1,0 +1,46 @@
+Class	Document	Source	Message	Time	Date	No.
+
+[Warning]	P2.SchDoc	Compiler	Footprint of component Component C1 30pF cannot be found	13:00:26	2026/11/9	1
+[Warning]	P2.SchDoc	Compiler	Footprint of component Component C2 30pF cannot be found	13:00:26	2026/11/9	2
+[Warning]	P2.SchDoc	Compiler	Footprint of component Component C3 10uF/16V cannot be found	13:00:26	2026/11/9	3
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component C4 100nF cannot be found	13:00:26	2026/11/9	4
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component C5 100nF cannot be found	13:00:26	2026/11/9	5
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component C6 470uF/50V cannot be found	13:00:26	2026/11/9	6
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component C7 100nF cannot be found	13:00:26	2026/11/9	7
+[Warning]	P5.SchDoc	Compiler	Footprint of component Component C8 100nF cannot be found	13:00:26	2026/11/9	8
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component C9 10uF/16V cannot be found	13:00:26	2026/11/9	9
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component D1 LED_GRN cannot be found	13:00:26	2026/11/9	10
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component D2 LED_RED cannot be found	13:00:26	2026/11/9	11
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component D3 1N5819 cannot be found	13:00:26	2026/11/9	12
+[Warning]	P5.SchDoc	Compiler	Footprint of component Component D4 1N5819 cannot be found	13:00:26	2026/11/9	13
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component F1 2A/250V cannot be found	13:00:26	2026/11/9	14
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component J1 YV1-VALVE cannot be found	13:00:26	2026/11/9	15
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component J2 YV2-VALVE cannot be found	13:00:26	2026/11/9	16
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component J3 YV3-VALVE cannot be found	13:00:26	2026/11/9	17
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component J4 SQ1-3 cannot be found	13:00:26	2026/11/9	18
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component J5 DS18B20 cannot be found	13:00:26	2026/11/9	19
+[Warning]	P5.SchDoc	Compiler	Footprint of component Component J6 USB-B cannot be found	13:00:26	2026/11/9	20
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component J7 BMP280-I2C cannot be found	13:00:26	2026/11/9	21
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component J8 KF301-2P cannot be found	13:00:26	2026/11/9	22
+[Warning]	P2.SchDoc	Compiler	Footprint of component Component R1 10k cannot be found	13:00:26	2026/11/9	23
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component R2 10k cannot be found	13:00:26	2026/11/9	24
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component R3 10k cannot be found	13:00:26	2026/11/9	25
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component R4 10k cannot be found	13:00:26	2026/11/9	26
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component R5 10k cannot be found	13:00:26	2026/11/9	27
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component R6 470R cannot be found	13:00:26	2026/11/9	28
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component R7 470R cannot be found	13:00:26	2026/11/9	29
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component R8 4.7k cannot be found	13:00:26	2026/11/9	30
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component R9 4.7k cannot be found	13:00:26	2026/11/9	31
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component R10 4.7k cannot be found	13:00:26	2026/11/9	32
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component R11 10k cannot be found	13:00:26	2026/11/9	33
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component R12 10k cannot be found	13:00:26	2026/11/9	34
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component R13 10k cannot be found	13:00:26	2026/11/9	35
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component RP1 10k x8 cannot be found	13:00:26	2026/11/9	36
+[Warning]	P3.SchDoc	Compiler	Footprint of component Component S1 SB1-ESTOP-NC cannot be found	13:00:26	2026/11/9	37
+[Warning]	P2.SchDoc	Compiler	Footprint of component Component S2 6x6 cannot be found	13:00:26	2026/11/9	38
+[Warning]	P2.SchDoc	Compiler	Footprint of component Component U1 AT89C52 cannot be found	13:00:26	2026/11/9	39
+[Warning]	P1.SchDoc	Compiler	Footprint of component Component U2 7805 cannot be found	13:00:26	2026/11/9	40
+[Warning]	P4.SchDoc	Compiler	Footprint of component Component U3 ULN2003A cannot be found	13:00:26	2026/11/9	41
+[Warning]	P5.SchDoc	Compiler	Footprint of component Component U4 CH340C cannot be found	13:00:26	2026/11/9	42
+[Warning]	P2.SchDoc	Compiler	Footprint of component Component X1 11.0592MHz cannot be found	13:00:26	2026/11/9	43
+[Info]	StickInsert_Control_v19.PrjPcb	Compiler	Compile successful, no errors found.	13:00:26	2026/11/9	44

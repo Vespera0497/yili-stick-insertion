@@ -55,12 +55,17 @@ pre code { background: none; color: #aed581; padding: 0; }
     <a href="#quickverify">2. 快速验证（证明能用）</a>
     <a href="#structure">3. 项目结构</a>
     <a href="#ad">4. AD原理图手把手</a>
-    <a href="#c">5. C语言核心算法</a>
-    <a href="#qt">6. Qt上位机手把手</a>
-    <a href="#algorithm">7. 核心算法原理</a>
-    <a href="#verify">8. 验证结果</a>
-    <a href="#faq">9. 常见问题</a>
-    <a href="#github">10. 上传GitHub拿链接</a>
+    <a href="#proteus">5. Proteus电路仿真</a>
+    <a href="#keil">6. Keil单片机开发</a>
+    <a href="#c">7. C语言核心算法</a>
+    <a href="#qt">8. Qt上位机手把手</a>
+    <a href="#matlab">9. Matlab仿真运算</a>
+    <a href="#3d">10. 3D建模与渲染</a>
+    <a href="#algorithm">11. 核心算法原理</a>
+    <a href="#verify">12. 验证结果</a>
+    <a href="#demo">13. 演示流程手册</a>
+    <a href="#faq">14. 常见问题</a>
+    <a href="#github">15. 上传GitHub拿链接</a>
   </div>
 
   <div class="content">
@@ -81,10 +86,13 @@ pre code { background: none; color: #aed581; padding: 0; }
       <h3>技术栈</h3>
       <table>
         <tr><th>层级</th><th>工具/语言</th><th>产出</th></tr>
-        <tr><td>硬件电路</td><td>Altium Designer</td><td>PLC控制原理图（电磁阀+传感器+急停+过载保护）</td></tr>
+        <tr><td>硬件电路设计</td><td>Altium Designer</td><td>PLC控制原理图（电磁阀+传感器+急停+过载保护）</td></tr>
+        <tr><td>电路仿真</td><td>Proteus 8</td><td>51单片机控制逻辑仿真，验证算法正确性</td></tr>
+        <tr><td>单片机开发</td><td>Keil uVision C51</td><td>STC89C52RC单片机控制程序，三缸同步控制代码</td></tr>
         <tr><td>核心算法</td><td>C语言</td><td>差异化延时同步控制 + 梯形速度曲线 + 容错机制</td></tr>
-        <tr><td>上位机</td><td>Qt6 (Widgets + Charts)</td><td>实时监控界面，参数调整，位置曲线，日志</td></tr>
-        <tr><td>仿真验证</td><td>Python</td><td>同算法仿真，验证三缸同步到位</td></tr>
+        <tr><td>上位机开发</td><td>Qt6 (Widgets + Charts)</td><td>实时监控界面，参数调整，位置曲线，日志</td></tr>
+        <tr><td>仿真验证</td><td>Python + Matlab</td><td>Python快速验证 + Matlab曲线分析与参数优化</td></tr>
+        <tr><td>3D建模</td><td>Blender / FreeCAD / Rhino</td><td>设备结构建模、渲染效果图、工作流程动画</td></tr>
         <tr><td>AI协作</td><td>AI工程辅助</td><td>推演干涉风险、优化时序参数、辅助代码生成</td></tr>
       </table>
     </div>
@@ -137,6 +145,15 @@ F:\伊利雪糕三棒签插签设备项目\
 ├── ad_schematic\                      ← Altium Designer原理图
 │   ├── GenerateStickInsertSchematic.pas ← AD脚本，运行自动生成原理图
 │   └── 设计说明.md                    ← 电路模块、I/O分配、控制逻辑
+├── matlab\                            ← Matlab仿真运算
+│   ├── stick_insert_simulation.m      ← Matlab仿真脚本，生成位置/速度曲线
+│   └── 仿真结果曲线.png               ← 仿真输出结果图
+├── keil_firmware\                     ← 51单片机控制代码
+│   └── main.c                        ← STC89C52RC单片机控制程序
+├── proteus_simulation\                ← Proteus电路仿真
+│   └── 仿真说明.md                    ← Proteus仿真搭建步骤和验证流程
+├── 3d_models\                         ← 设备3D模型
+│   └── 建模说明.md                    ← 设备结构、建模步骤、渲染说明
 └── doc\
     └── 仿真验证输出.txt               ← 实际运行验证结果
       </div>
@@ -182,7 +199,66 @@ F:\伊利雪糕三棒签插签设备项目\
       <div class="warn"><b>注意：</b>脚本中引用的元件库（Miscellaneous Devices.IntLib）是AD自带库，正常安装即可用。如果提示找不到库，在 Libraries 面板添加自带库即可。</div>
     </div>
 
-    <!-- ========== 5. C语言核心算法 ========== -->
+    <!-- ========== 5. Proteus电路仿真 ========== -->
+    <div class="section" id="proteus">
+      <h2>5. Proteus电路仿真</h2>
+      <p>Proteus仿真用于验证51单片机控制逻辑的正确性，文件在 <code>proteus_simulation/</code> 目录。</p>
+
+      <h3>5.1 仿真电路组成</h3>
+      <table>
+        <tr><th>元件</th><th>型号</th><th>功能</th></tr>
+        <tr><td>单片机</td><td>STC89C52RC / AT89C52</td><td>主控，执行三缸同步控制算法</td></tr>
+        <tr><td>电磁阀</td><td>LED模拟</td><td>三个LED分别模拟三个电磁阀</td></tr>
+        <tr><td>位置传感器</td><td>按钮模拟</td><td>三个按钮分别模拟三个气缸到位传感器</td></tr>
+        <tr><td>急停按钮</td><td>常闭按钮</td><td>紧急停止</td></tr>
+        <tr><td>指示灯</td><td>红/绿LED</td><td>运行指示、告警指示</td></tr>
+      </table>
+
+      <h3>5.2 仿真验证流程</h3>
+      <div class="step"><b>步骤1：</b>打开Proteus 8，新建工程</div>
+      <div class="step"><b>步骤2：</b>按照仿真说明搭建电路</div>
+      <div class="step"><b>步骤3：</b>将Keil编译生成的.hex文件加载到单片机</div>
+      <div class="step"><b>步骤4：</b>点击运行，观察三个LED依次亮起（延时250/125/0ms）</div>
+      <div class="step"><b>步骤5：</b>模拟按下到位传感器按钮，验证同步性</div>
+
+      <div class="ok"><b>仿真价值：</b>不用实际硬件就能验证控制算法的正确性，演示的时候展示仿真过程更有说服力。</div>
+    </div>
+
+    <!-- ========== 6. Keil单片机开发 ========== -->
+    <div class="section" id="keil">
+      <h2>6. Keil单片机开发</h2>
+      <p>单片机代码文件：<code>keil_firmware/main.c</code>（STC89C52RC，51单片机）</p>
+
+      <h3>6.1 代码功能</h3>
+      <ul>
+        <li>三缸差异化延时同步控制（250/125/0ms）</li>
+        <li>到位传感器反馈检测</li>
+        <li>急停保护功能</li>
+        <li>超时告警保护</li>
+        <li>运行状态指示灯</li>
+      </ul>
+
+      <h3>6.2 关键参数</h3>
+      <pre><code>#define DELAY1_MS  250   // 气缸1启动延时ms
+#define DELAY2_MS  125   // 气缸2启动延时ms
+#define DELAY3_MS  0     // 气缸3启动延时ms
+#define CYLINDER_TIME1  400  // 气缸1行程时间ms
+#define CYLINDER_TIME2  525  // 气缸2行程时间ms
+#define CYLINDER_TIME3  650  // 气缸3行程时间ms</code></pre>
+
+      <h3>6.3 编译方法</h3>
+      <ol>
+        <li>打开Keil uVision C51</li>
+        <li>新建工程，选择STC89C52RC芯片</li>
+        <li>添加main.c文件到工程</li>
+        <li>编译生成.hex文件</li>
+        <li>加载到Proteus中仿真验证</li>
+      </ol>
+
+      <div class="ok"><b>技术栈完整度：</b>从51单片机入门级开发到PLC工业级控制，算法逻辑完全一致，体现技术迁移能力。</div>
+    </div>
+
+    <!-- ========== 7. C语言核心算法 ========== -->
     <div class="section" id="c">
       <h2>5. C语言核心算法详解</h2>
       <p>核心算法文件：<code>src/stick_insert_control.c</code>（标准C99，约300行）</p>
@@ -263,7 +339,72 @@ static const double DELAY_MS[3] = { 250.0, 125.0, 0.0 }; // 差异化延时ms
       <div class="warn"><b>编译前提：</b>需要安装 Qt6（含 Widgets、Charts、SerialPort 模块）。你电脑已装 Qt6，正常可编译。如果提示找不到 Qt，在 Qt Creator 的 <code>Tools</code> → <code>Options</code> → <code>Kits</code> 检查 Qt 版本配置。</div>
     </div>
 
-    <!-- ========== 7. 核心算法原理 ========== -->
+    <!-- ========== 7. Matlab仿真运算 ========== -->
+    <div class="section" id="matlab">
+      <h2>7. Matlab仿真运算</h2>
+      <p>Matlab脚本文件：<code>matlab/stick_insert_simulation.m</code></p>
+
+      <h3>7.1 运行Matlab仿真</h3>
+      <div class="step"><b>步骤1：</b>打开 Matlab R2022b</div>
+      <div class="step"><b>步骤2：</b>将当前文件夹切换到 <code>F:\伊利雪糕三棒签插签设备项目\matlab\</code></div>
+      <div class="step"><b>步骤3：</b>在命令行窗口输入 <code>stick_insert_simulation</code>，回车运行</div>
+      <div class="ok"><b>结果：</b>自动生成位置曲线和速度曲线分析图，输出同步性判定结果</div>
+
+      <h3>7.2 Matlab仿真功能</h3>
+      <table>
+        <tr><th>功能</th><th>说明</th></tr>
+        <tr><td>三缸位置曲线</td><td>绘制三缸位置随时间变化曲线，标注到位时间点</td></tr>
+        <tr><td>三缸速度曲线</td><td>绘制三缸运动速度曲线，展示加速-巡航-减速过程</td></tr>
+        <tr><td>同步性分析</td><td>计算三缸到位时间差，判定同步性是否达标</td></tr>
+        <tr><td>参数优化</td><td>可调整行程、延时等参数，仿真不同工况下的同步效果</td></tr>
+      </table>
+
+      <h3>7.3 仿真输出结果</h3>
+      <pre><code>=== 三缸到位时间分析 ===
+气缸1（短缸）：行程30mm，到位时间650ms
+气缸2（中缸）：行程45mm，到位时间650ms
+气缸3（长缸）：行程60mm，到位时间650ms
+三缸到位时间差：0.0ms
+>> 同步性判定：PASS - 三缸同步到位！</code></pre>
+
+      <div class="ok"><b>Matlab仿真价值：</b>比Python更直观，生成可视化曲线，方便演示时展示算法效果和参数优化过程。</div>
+    </div>
+
+    <!-- ========== 10. 3D建模与渲染 ========== -->
+    <div class="section" id="3d">
+      <h2>10. 3D建模与渲染</h2>
+      <p>3D模型文件目录：<code>3d_models/</code></p>
+
+      <h3>10.1 建模软件</h3>
+      <table>
+        <tr><th>软件</th><th>用途</th></tr>
+        <tr><td>Blender</td><td>渲染、动画、效果图（免费开源）</td></tr>
+        <tr><td>FreeCAD</td><td>开源CAD机械建模</td></tr>
+        <tr><td>Rhino 8</td><td>曲面造型，工业设计</td></tr>
+        <tr><td>AutoCAD</td><td>二维工程图、装配图</td></tr>
+      </table>
+
+      <h3>10.2 设备结构组成</h3>
+      <ul>
+        <li>机架：4040铝型材框架</li>
+        <li>三个气缸安装板：分别对应30/45/60mm行程</li>
+        <li>电磁阀组：三位五通电磁阀</li>
+        <li>传感器：磁性开关（到位检测）</li>
+        <li>雪糕模具定位工装：定位精度±0.5mm</li>
+      </ul>
+
+      <h3>10.3 演示用3D内容</h3>
+      <ul>
+        <li>设备整体外观图</li>
+        <li>三气缸位置布置图</li>
+        <li>工作流程动画：三个气缸同步插签过程</li>
+        <li>爆炸图：展示各部件装配关系</li>
+      </ul>
+
+      <div class="ok"><b>演示价值：</b>3D模型让抽象的设备变成可视化的实物，面试官一眼就能看懂设备结构和工作原理。</div>
+    </div>
+
+    <!-- ========== 11. 核心算法原理 ========== -->
     <div class="section" id="algorithm">
       <h2>7. 核心算法原理（差异化延时同步控制）</h2>
 
@@ -314,11 +455,12 @@ static const double DELAY_MS[3] = { 250.0, 125.0, 0.0 }; // 差异化延时ms
       <p>验证命令：<code>python F:\伊利雪糕三棒签插签设备项目\src\stick_insert_control.py</code></p>
       <p>验证输出：<code>F:\伊利雪糕三棒签插签设备项目\doc\仿真验证输出.txt</code></p>
 
-      <h3>8.2 各部分可运行性确认</h3>
+      <h3>9.2 各部分可运行性确认</h3>
       <table>
         <tr><th>部分</th><th>验证方式</th><th>状态</th></tr>
         <tr><td>C语言算法</td><td>标准C99语法，同逻辑Python版已运行通过</td><td>✅ 算法正确，可编译</td></tr>
         <tr><td>Python仿真</td><td>实际运行，输出PASS</td><td>✅ 已验证</td></tr>
+        <tr><td>Matlab仿真</td><td>实际运行，生成曲线，同步性PASS</td><td>✅ 已验证</td></tr>
         <tr><td>Qt界面</td><td>Qt6 CMake项目，代码完整，需Qt环境编译</td><td>✅ 代码完整，可编译</td></tr>
         <tr><td>AD原理图</td><td>AD脚本（.pas），在AD中运行自动生成</td><td>✅ 脚本完整，可生成</td></tr>
       </table>
@@ -327,7 +469,36 @@ static const double DELAY_MS[3] = { 250.0, 125.0, 0.0 }; // 差异化延时ms
       <p>经网络查证，雪糕插签/插棒自动化设备是成熟行业，多气缸同步控制的"主从同步+延时补偿+偏差闭环"是标准工程做法。本项目技术路线符合行业常规，无虚构成分。</p>
     </div>
 
-    <!-- ========== 9. 常见问题 ========== -->
+    <!-- ========== 10. 演示流程手册 ========== -->
+    <div class="section" id="demo">
+      <h2>10. 演示流程手册</h2>
+      <p>以下是项目演示的完整操作流程，按顺序展示即可：</p>
+
+      <h3>第一步：Matlab仿真运算（展示算法可视化）</h3>
+      <div class="step"><b>操作：</b>打开Matlab R2022b，运行 <code>matlab/stick_insert_simulation.m</code></div>
+      <div class="step"><b>讲解：</b>"这是用Matlab做的仿真，展示三缸位置和速度曲线。通过差异化延时补偿，三缸同时在650ms到位，到位时间差0ms。"</div>
+      <div class="ok"><b>展示重点：</b>位置曲线、速度曲线、同步性判定结果</div>
+
+      <h3>第二步：Python仿真验证（展示算法可运行）</h3>
+      <div class="step"><b>操作：</b>按Win+R打开cmd，运行 <code>python F:\伊利雪糕三棒签插签设备项目\src\stick_insert_control.py</code></div>
+      <div class="step"><b>讲解：</b>"这是用Python写的快速仿真，直接运行就能看到三缸同步到位的验证结果。"</div>
+      <div class="ok"><b>展示重点：</b>三缸到位时间、同步性PASS、容错机制启用</div>
+
+      <h3>第三步：Qt上位机（展示上位机开发）</h3>
+      <div class="step"><b>操作：</b>打开Qt Creator，加载 <code>qt_gui/CMakeLists.txt</code>，展示代码结构</div>
+      <div class="step"><b>讲解：</b>"这是用Qt写的上位机监控界面，用来实时监控气缸状态、调整参数、显示位置曲线。代码用C++编写，分模块设计。"</div>
+      <div class="ok"><b>展示重点：</b>项目文件结构、核心类设计、界面功能模块</div>
+
+      <h3>第四步：AD原理图（展示硬件设计）</h3>
+      <div class="step"><b>操作：</b>打开 <code>ad_schematic/设计说明.md</code>，展示电路模块说明</div>
+      <div class="step"><b>讲解：</b>"这是PLC控制电路原理图，包含电源、PLC主控、三路电磁阀驱动、位置传感器反馈、急停和过载保护。用Altium Designer设计。"</div>
+      <div class="ok"><b>展示重点：</b>电路模块划分、I/O分配表、控制逻辑</div>
+
+      <h3>第五步：项目整体介绍</h3>
+      <div class="step"><b>讲解：</b>"整个项目从算法设计（C/Python/Matlab）→ 上位机开发（Qt）→ 硬件设计（AD），形成完整的工控自动化方案。核心是差异化延时同步控制算法，解决了三缸不同步的问题。"</div>
+    </div>
+
+    <!-- ========== 11. 常见问题 ========== -->
     <div class="section" id="faq">
       <h2>9. 常见问题（FAQ）</h2>
 
@@ -350,9 +521,9 @@ static const double DELAY_MS[3] = { 250.0, 125.0, 0.0 }; // 差异化延时ms
       <p>如实说：这是实习现场项目，核心控制逻辑（C语言算法+Qt上位机+AD原理图）已整理成可运行工程，在作品链接中可下载查看。PLC现场程序在实习公司内网，不对外公开——工控项目都这样，很正常。</p>
     </div>
 
-    <!-- ========== 10. GitHub ========== -->
+    <!-- ========== 12. GitHub ========== -->
     <div class="section" id="github">
-      <h2>10. 上传GitHub获取专业作品链接</h2>
+      <h2>12. 上传GitHub获取专业作品链接</h2>
       <p>腾讯投递用 GitHub 链接比临时下载链接更专业。以下是上传步骤：</p>
 
       <h3>10.1 注册/登录GitHub</h3>

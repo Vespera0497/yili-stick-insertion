@@ -14,16 +14,13 @@
 #include <QProgressBar>
 #include <QMessageBox>
 
-using namespace QtCharts;
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(nullptr)
     , m_ctrl(new CylinderControl(this))
     , m_chart(nullptr)
     , m_axisX(nullptr)
     , m_axisY(nullptr)
-    , m_chartMaxMs(900)
+    , m_chartMaxMs(500)
 {
     // 手动构建 UI（不依赖 .ui 文件，确保可编译）
     auto *central = new QWidget(this);
@@ -60,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(btnEstop, &QPushButton::clicked, this, &MainWindow::onEmergencyStop);
 
     // 参数设置
-    auto *paramGroup = new QGroupBox(QStringLiteral("参数设置（差异化延时补偿）"));
+    auto *paramGroup = new QGroupBox(QStringLiteral("参数设置（统一 30 mm 行程 / 125 ms 错峰）"));
     auto *paramLayout = new QGridLayout(paramGroup);
     QDoubleSpinBox *spinDelay[3];
     QDoubleSpinBox *spinStroke[3];
@@ -71,7 +68,7 @@ MainWindow::MainWindow(QWidget *parent)
         paramLayout->addWidget(spinStroke[i], i*2, 1);
         paramLayout->addWidget(new QLabel(QStringLiteral("气缸%1 延时(ms)").arg(i+1)), i*2+1, 0);
         spinDelay[i] = new QDoubleSpinBox;
-        spinDelay[i]->setRange(0, 500); spinDelay[i]->setValue(m_ctrl->state(i).delayMs);
+        spinDelay[i]->setRange(0, 1000); spinDelay[i]->setValue(m_ctrl->state(i).delayMs);
         paramLayout->addWidget(spinDelay[i], i*2+1, 1);
     }
     auto *btnApply = new QPushButton(QStringLiteral("应用参数"));
@@ -143,11 +140,14 @@ MainWindow::MainWindow(QWidget *parent)
         logEdit->append(m);
     });
     connect(m_ctrl, &CylinderControl::allArrived, this, [this, logEdit](int spread) {
-        QString msg = spread <= 15
-            ? QStringLiteral("[结果] 同步性 PASS —— 到位时间差 %1ms，三根棒签同步精准插入").arg(spread)
-            : QStringLiteral("[结果] 到位时间差 %1ms，需优化延时补偿").arg(spread);
+        // 2026-11-15 改：现行口径是「统一 30 mm / 125 ms 等间隔错峰」，
+        // 设计到位差就是 250 ms，不是「越小越好」。
+        // 旧判定用 spread<=15 当同步合格，改参数后必然落到 else 分支，
+        // 弹出「需优化延时补偿」——既与口径矛盾，模态框还会挡住演示画面。
+        QString msg = (spread >= 240 && spread <= 260)
+            ? QStringLiteral("[结果] 错峰判定 PASS —— 三缸 125 ms 等间隔依次启动，到位时间差 %1 ms").arg(spread)
+            : QStringLiteral("[结果] 到位时间差 %1 ms，与 250 ms 设计错峰不符").arg(spread);
         logEdit->append(msg);
-        QMessageBox::information(this, QStringLiteral("插签完成"), msg);
     });
 
     // ===== 右侧：实时曲线 =====
@@ -170,7 +170,7 @@ MainWindow::~MainWindow() = default;
 void MainWindow::setupChart()
 {
     m_chart = new QChart;
-    m_chart->setTitle(QStringLiteral("三气缸位置-时间曲线（差异化延时同步控制）"));
+    m_chart->setTitle(QStringLiteral("三气缸位置-时间曲线（统一 30 mm 行程 / 125 ms 错峰）"));
     m_chart->setAnimationOptions(QChart::NoAnimation);
 
     const char *colors[3] = {"#E53935", "#FB8C00", "#1E88E5"};
@@ -188,7 +188,7 @@ void MainWindow::setupChart()
     m_axisX->setRange(0, m_chartMaxMs);
     m_axisY = new QValueAxis;
     m_axisY->setTitleText(QStringLiteral("位置 (mm)"));
-    m_axisY->setRange(0, 70);
+    m_axisY->setRange(0, 40);
 
     m_chart->addAxis(m_axisX, Qt::AlignBottom);
     m_chart->addAxis(m_axisY, Qt::AlignLeft);
@@ -217,8 +217,8 @@ void MainWindow::onResetClicked()
 {
     m_ctrl->reset();
     for (int i = 0; i < 3; ++i) m_series[i]->clear();
-    m_chartMaxMs = 900;
-    m_axisX->setMax(900);
+    m_chartMaxMs = 500;
+    m_axisX->setMax(500);
 }
 void MainWindow::onEmergencyStop() { m_ctrl->emergencyStop(); }
 void MainWindow::onApplyParams() {}

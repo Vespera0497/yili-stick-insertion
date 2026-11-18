@@ -13,7 +13,6 @@ qt_add_executable(StickInsertGUI
     main.cpp
     mainwindow.cpp
     mainwindow.h
-    mainwindow.ui
     cylindercontrol.h
     cylindercontrol.cpp
 )

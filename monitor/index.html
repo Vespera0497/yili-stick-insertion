@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8">
+<title>三棒签插签设备 · 监控看板</title>
+<style>
+ body{font-family:"Microsoft YaHei",sans-serif;margin:0;background:#10151c;color:#dfe6ee}
+ h1{font-size:20px;margin:14px 16px}
+ .row{display:flex;flex-wrap:wrap;gap:12px;margin:0 16px}
+ .card{background:#1a222d;border:1px solid #2c3a4c;border-radius:8px;padding:12px 16px;min-width:280px;flex:1}
+ .card h2{font-size:14px;margin:0 0 10px;color:#8fb8e0;font-weight:600}
+ .big{font-size:30px;font-weight:700;line-height:1.1}
+ .sub{color:#8a9bab;font-size:12px;margin-top:4px}
+ .io span{display:inline-block;margin:3px 8px 3px 0;padding:3px 10px;border-radius:12px;
+   background:#24303f;color:#6b7c8f;font-size:13px}
+ .io .on{background:#1d5c34;color:#7dffa8}
+ .io .alarm{background:#5c1d1d;color:#ff8f8f}
+ table{width:100%;border-collapse:collapse;font-size:13px}
+ td,th{padding:4px 8px;border-bottom:1px solid #24303f;text-align:left}
+ th{color:#8fb8e0;font-weight:600}
+ .stale{color:#ffb347}
+ .fresh{color:#57d98a}
+ .evt-estop{color:#ff8f8f}
+ .evt-timeout{color:#ffc46b}
+</style></head><body>
+<h1>三棒签插签设备 · 监控看板 <span id="fresh" class="sub"></span></h1>
+<div class="row">
+ <div class="card"><h2>实时运行状态</h2>
+  <div class="big" id="mode">-</div>
+  <div class="io" id="io"></div>
+  <div class="sub" id="comms"></div></div>
+ <div class="card"><h2>产量与节拍</h2>
+  <div class="big" id="cnt">-</div><div class="sub">累计插签成功</div>
+  <div style="margin-top:8px" id="prod"></div></div>
+ <div class="card"><h2>扩展指标（软件口径）</h2>
+  <div id="ext"></div>
+  <div class="sub">OEE(简化)=可用率×良率；良率=成功/(成功+超时类事件)；当日产量=当日 CNT 最大−最小</div></div>
+</div>
+<div class="row" style="margin-top:12px">
+ <div class="card" style="flex:2"><h2>故障与告警事件（带时间戳，SQLite 落盘）</h2>
+  <table><thead><tr><th>时间</th><th>事件</th><th>事件SEQ</th><th>参数</th></tr></thead>
+  <tbody id="ev"></tbody></table></div>
+</div>
+<script>
+let lastEv = 0;
+function ioSpan(n, on, cls){
+  return "<span class='" + (on ? (cls || "on") : "") + "'>" + n + (on ? " ●" : " ○") + "</span>";
+}
+async function poll(){
+  try{
+    const s = await (await fetch("/api/state")).json();
+    const f = document.getElementById("fresh");
+    if(!s.ok){ f.textContent = "· " + (s.reason||""); f.className="sub stale"; }
+    else{
+      f.textContent = "· 数据" + (s.fresh ? "新鲜" : "停滞 " + s.stale_sec + "s") +
+                      "（updated_at " + s.stale_sec + "s 前）· 丢帧 " + s.lost;
+      f.className = "sub " + (s.fresh ? "fresh" : "stale");
+      document.getElementById("mode").textContent = s.mode_name;
+      const i = s.io;
+      document.getElementById("io").innerHTML =
+        ioSpan("YV1",i.YV1)+ioSpan("YV2",i.YV2)+ioSpan("YV3",i.YV3)+
+        ioSpan("SQ1",i.SQ1)+ioSpan("SQ2",i.SQ2)+ioSpan("SQ3",i.SQ3)+
+        ioSpan("SB1 急停",i.SB1,"alarm")+ioSpan("RUN 灯",i.LED_RUN)+ioSpan("ALARM 灯",i.LED_ALARM,"alarm");
+      document.getElementById("cnt").textContent = s.cnt + " 次";
+      document.getElementById("prod").innerHTML =
+        "当日产量 <b>" + s.day_count + "</b> 次 ｜ 最近节拍 <b>" + s.cyc_ms + "</b> ms" +
+        (s.avg_cyc ? " ｜ 当日均节拍 " + s.avg_cyc + " ms" : "");
+      const t = s.tmp === null ? "-" : s.tmp.toFixed(1) + " ℃";
+      const p = s.prs === null ? "-" : s.prs.toFixed(1) + " kPa";
+      document.getElementById("ext").innerHTML =
+        "OEE(简化) <b>" + (s.oee===null?"-":s.oee+"%") + "</b><br>良率 <b>" +
+        (s.quality===null?"-":s.quality+"%") + "</b><br>可用率 <b>" +
+        (s.avail===null?"-":s.avail+"%") + "</b><br>温度 <b>" + t + "</b>　气压 <b>" + p + "</b>" +
+        "<br>当日告警 <b>" + s.alarms_today + "</b> 次";
+      const c = s.comms || {};
+      document.getElementById("comms").textContent =
+        "上位机 " + (c.connected ? ("已连接 " + (c.port||"")) : "未连接") + " · 历史行 " + s.hist_rows;
+    }
+    const e = await (await fetch("/api/events?after=" + lastEv)).json();
+    if(e.ok && e.events.length){
+      lastEv = e.last_id;
+      const tb = document.getElementById("ev");
+      tb.innerHTML = e.events.map(x => "<tr class='evt-" +
+        (x.evt<=1?"estop":(x.evt<=3?"timeout":"")) + "'><td>" + x.time + "</td><td>" + x.name +
+        "</td><td>" + x.seq + "</td><td>" + x.par + "</td></tr>").join("") + tb.innerHTML;
+      while(tb.children.length > 100) tb.removeChild(tb.lastChild);
+    }
+  }catch(err){
+    document.getElementById("fresh").textContent = "· 看板服务未响应：" + err;
+  }
+}
+poll(); setInterval(poll, 1000);
+</script></body></html>
