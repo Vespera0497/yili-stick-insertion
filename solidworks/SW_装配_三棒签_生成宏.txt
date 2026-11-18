@@ -1,0 +1,201 @@
+' ============================================================
+' SolidWorks 2024 宏：一键生成「三棒签插签装置」装配体 + 导出 STEP/STL
+' 复刻对象：伊利专利 CN202422081571.4 插签矫正器 + 同步三签插放机构
+' 本宏自动：
+'   1) 生成并保存 3 个主零件（排架/推板/机架）—— 几何同 01_机械设计 宏
+'   2) 生成并保存 1 个木签零件 + 1 个雪糕定位座零件（复用 3 次）
+'   3) 新建装配体，用 Transform2 把零件摆到正确相对位置（初始位，无参数化配合）
+'   4) 重建后导出 STEP(.step) 与 STL(.stl) 供评审/3D 打印/演示
+' 单位：米(m)　坐标：前视基准面(XY)，挤出沿 +Z
+' 用法：SW2024 → 工具→宏→新建→粘贴本文件→运行(F5)；OUT 已指向本工程目录
+' 说明：本环境无 SW GUI，未做运行时校验；请在用户机 SW2024 中跑一次确认。
+' ============================================================
+Option Explicit
+
+' ---------- 输出目录（已指向主工程 solidworks 目录）----------
+Const OUT As String = "F:\伊利雪糕三棒签插签设备项目\solidworks\"
+
+' ============================================================
+' 主流程
+' ============================================================
+Sub main()
+    Dim swApp As Object, longstatus As Long
+    Set swApp = Application.SldWorks
+    swApp.Visible = True
+
+    ' --- 1. 生成主零件并保存 ---
+    Call buildRack(swApp, OUT & "排架.sldprt")
+    Call buildPushPlate(swApp, OUT & "推板.sldprt")
+    Call buildFrame(swApp, OUT & "机架.sldprt")
+    Call buildStick(swApp, OUT & "木签.sldprt")
+    Call buildSeat(swApp, OUT & "雪糕定位座.sldprt")
+
+    ' --- 2. 新建装配体 ---
+    Dim asm As Object
+    Set asm = swApp.NewAssembly()
+    swApp.ActivateDoc2 asm.GetTitle, False, longstatus
+    Set asm = swApp.ActiveDoc
+
+    ' --- 3. 加入零件并按相对位置摆放（Transform2）---
+    ' 机架：原点（底板 z 0..0.020）
+    Call addAt(asm, swApp, OUT & "机架.sldprt", 0, 0, 0)
+    ' 排架：坐在机架底板上方（z +0.020；本地孔 z0..0.008 → 世界 0.020..0.028；导向套到 0.034）
+    Call addAt(asm, swApp, OUT & "排架.sldprt", 0, 0, 0.020)
+    ' 推板：抬到上止点（行程 50mm），其底面 z = 0.185
+    Call addAt(asm, swApp, OUT & "推板.sldprt", 0, 0, 0.185)
+
+    ' 3 根木签：竖直穿过排架三孔；底端落在机架底板(z=0.020)，顶端到推板底面(0.185)
+    '   木签本地 z[-0.055,0.055](长110mm)；中心 z = 0.020+0.055 = 0.075
+    Dim xs(2) As Double, i As Integer
+    xs(0) = -0.05: xs(1) = 0#: xs(2) = 0.05
+    For i = 0 To 2
+        Call addAt(asm, swApp, OUT & "木签.sldprt", xs(i), 0, 0.075)
+    Next i
+    ' 3 个雪糕定位座：坐落在机架底板(z=0.020..0.060)，与三孔同心
+    For i = 0 To 2
+        Call addAt(asm, swApp, OUT & "雪糕定位座.sldprt", xs(i), 0, 0.020)
+    Next i
+
+    asm.EditRebuild3
+    asm.ViewZoomtofit2
+
+    ' --- 4. 导出 STEP / STL ---
+    Dim stepPath As String, stlPath As String
+    stepPath = OUT & "三棒签插签装置.step"
+    stlPath = OUT & "三棒签插签装置.stl"
+    asm.SaveAs2 stepPath, 0, True, False          ' SW 按扩展名推断为 STEP
+    asm.SaveAs2 stlPath, 0, True, False           ' SW 按扩展名推断为 STL
+    MsgBox "装配体已生成并导出：" & vbCrLf & stepPath & vbCrLf & stlPath & _
+           vbCrLf & vbCrLf & "提示：当前用 Transform2 初始摆位；如需参数化配合，" & _
+           "可在 GUI 中对齐孔轴加 同心/重合 配合精修。", vbInformation, "SW 装配宏"
+End Sub
+
+' ============================================================
+' 把零件加入装配并平移到 (tx,ty,tz)
+' ============================================================
+Sub addAt(asm As Object, swApp As Object, path As String, tx As Double, ty As Double, tz As Double)
+    Dim comp As Object, mathUtil As Object, t As Object
+    Dim mtx(15) As Double
+    Set comp = asm.AddComponent4(path, "", tx, ty, tz)   ' 先插到近似位置
+    If comp Is Nothing Then Exit Sub
+    Set mathUtil = swApp.GetMathUtility()
+    mtx(0) = 1: mtx(1) = 0: mtx(2) = 0: mtx(3) = 0
+    mtx(4) = 0: mtx(5) = 1: mtx(6) = 0: mtx(7) = 0
+    mtx(8) = 0: mtx(9) = 0: mtx(10) = 1: mtx(11) = 0
+    mtx(12) = tx: mtx(13) = ty: mtx(14) = tz: mtx(15) = 1
+    Set t = mathUtil.CreateTransform(mtx)
+    comp.Transform2 = t
+End Sub
+
+' ============================================================
+' 排架（伊利矫正器）：底板 150×40×8 + 3×Φ10/Φ4.5 导向套(h6)
+' ============================================================
+Sub buildRack(swApp As Object, path As String)
+    Dim Part As Object, boolstatus As Boolean, vSk As Variant
+    Dim i As Integer, xs(2) As Double
+    Set Part = swApp.NewPart()
+    boolstatus = Part.Extension.SelectByID2("前视基准面", "PLANE", 0#, 0#, 0#, False, 0, Nothing, 0)
+    Part.SketchManager.InsertSketch True
+    vSk = Part.SketchManager.CreateCornerRectangle(-0.075, -0.020, 0#, 0.075, 0.020, 0#, False)
+    xs(0) = -0.05: xs(1) = 0#: xs(2) = 0.05
+    For i = 0 To 2
+        Part.SketchManager.CreateCircle xs(i), 0#, 0#, xs(i) + 0.00225, 0#, 0#  ' Φ4.5 通孔
+    Next i
+    Part.SketchManager.InsertSketch True
+    Part.FeatureManager.FeatureExtrusion2 True, False, False, 0, 0, 0.008, 0.01, _
+        False, False, False, False, 0, 0, False, False, False, False
+    Part.ClearSelection2 True
+    For i = 0 To 2   ' Φ10/Φ4.5 导向套（高6mm）
+        Part.Extension.SelectByID2 "前视基准面", "PLANE", 0#, 0#, 0#, False, 0, Nothing, 0
+        Part.SketchManager.InsertSketch True
+        Part.SketchManager.CreateCircle xs(i), 0#, 0#, xs(i) + 0.005, 0#, 0#
+        Part.SketchManager.CreateCircle xs(i), 0#, 0#, xs(i) + 0.00225, 0#, 0#
+        Part.SketchManager.InsertSketch True
+        Part.FeatureManager.FeatureExtrusion2 True, False, False, 0, 0, 0.014, 0.01, _
+            False, False, False, False, 0, 0, False, False, False, False
+        Part.ClearSelection2 True
+    Next i
+    Part.SaveAs2 path, 0, True, False
+    swApp.QuitDoc Part.GetTitle
+End Sub
+
+' ============================================================
+' 推板：刚性 150×30×12
+' ============================================================
+Sub buildPushPlate(swApp As Object, path As String)
+    Dim Part As Object, boolstatus As Boolean, vSk As Variant
+    Set Part = swApp.NewPart()
+    boolstatus = Part.Extension.SelectByID2("前视基准面", "PLANE", 0#, 0#, 0#, False, 0, Nothing, 0)
+    Part.SketchManager.InsertSketch True
+    vSk = Part.SketchManager.CreateCornerRectangle(-0.075, -0.015, 0#, 0.075, 0.015, 0#, False)
+    Part.SketchManager.InsertSketch True
+    Part.FeatureManager.FeatureExtrusion2 True, False, False, 0, 0, 0.012, 0.01, _
+        False, False, False, False, 0, 0, False, False, False, False
+    Part.ClearSelection2 True
+    Part.SaveAs2 path, 0, True, False
+    swApp.QuitDoc Part.GetTitle
+End Sub
+
+' ============================================================
+' 机架：底板 300×200×20 + 4 根 4040 立柱(高380)
+' ============================================================
+Sub buildFrame(swApp As Object, path As String)
+    Dim Part As Object, boolstatus As Boolean, vSk As Variant
+    Dim lx(3) As Double, ly(3) As Double, i As Integer
+    Set Part = swApp.NewPart()
+    boolstatus = Part.Extension.SelectByID2("前视基准面", "PLANE", 0#, 0#, 0#, False, 0, Nothing, 0)
+    Part.SketchManager.InsertSketch True
+    vSk = Part.SketchManager.CreateCornerRectangle(-0.15, -0.10, 0#, 0.15, 0.10, 0#, False)
+    Part.SketchManager.InsertSketch True
+    Part.FeatureManager.FeatureExtrusion2 True, False, False, 0, 0, 0.020, 0.01, _
+        False, False, False, False, 0, 0, False, False, False, False
+    Part.ClearSelection2 True
+    lx(0) = -0.12: ly(0) = -0.07: lx(1) = 0.12: ly(1) = -0.07
+    lx(2) = -0.12: ly(2) = 0.07: lx(3) = 0.12: ly(3) = 0.07
+    For i = 0 To 3
+        Part.Extension.SelectByID2 "前视基准面", "PLANE", 0#, 0#, 0#, False, 0, Nothing, 0
+        Part.SketchManager.InsertSketch True
+        vSk = Part.SketchManager.CreateCornerRectangle(lx(i) - 0.02, ly(i) - 0.02, 0#, _
+                                                      lx(i) + 0.02, ly(i) + 0.02, 0#, False)
+        Part.SketchManager.InsertSketch True
+        Part.FeatureManager.FeatureExtrusion2 True, False, False, 0, 0, 0.380, 0.01, _
+            False, False, False, False, 0, 0, False, False, False, False
+        Part.ClearSelection2 True
+    Next i
+    Part.SaveAs2 path, 0, True, False
+    swApp.QuitDoc Part.GetTitle
+End Sub
+
+' ============================================================
+' 木签：冰棒签 10(宽)×2(厚)×110(长) mm（沿 Z 竖直）
+' ============================================================
+Sub buildStick(swApp As Object, path As String)
+    Dim Part As Object, boolstatus As Boolean, vSk As Variant
+    Set Part = swApp.NewPart()
+    boolstatus = Part.Extension.SelectByID2("前视基准面", "PLANE", 0#, 0#, 0#, False, 0, Nothing, 0)
+    Part.SketchManager.InsertSketch True
+    vSk = Part.SketchManager.CreateCornerRectangle(-0.005, -0.001, 0#, 0.005, 0.001, 0#, False)
+    Part.SketchManager.InsertSketch True
+    Part.FeatureManager.FeatureExtrusion2 True, False, False, 0, 0, 0.110, 0.01, _
+        False, False, False, False, 0, 0, False, False, False, False
+    Part.ClearSelection2 True
+    Part.SaveAs2 path, 0, True, False
+    swApp.QuitDoc Part.GetTitle
+End Sub
+
+' ============================================================
+' 雪糕定位座：杯状（简化为圆柱）Φ30×40 mm
+' ============================================================
+Sub buildSeat(swApp As Object, path As String)
+    Dim Part As Object, boolstatus As Boolean
+    Set Part = swApp.NewPart()
+    boolstatus = Part.Extension.SelectByID2("前视基准面", "PLANE", 0#, 0#, 0#, False, 0, Nothing, 0)
+    Part.SketchManager.InsertSketch True
+    Part.SketchManager.CreateCircle 0#, 0#, 0#, 0.015, 0#, 0#   ' Φ30
+    Part.SketchManager.InsertSketch True
+    Part.FeatureManager.FeatureExtrusion2 True, False, False, 0, 0, 0.040, 0.01, _
+        False, False, False, False, 0, 0, False, False, False, False
+    Part.ClearSelection2 True
+    Part.SaveAs2 path, 0, True, False
+    swApp.QuitDoc Part.GetTitle
+End Sub
